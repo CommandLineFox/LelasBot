@@ -3,6 +3,7 @@
 /out-tsc
 
 ### Node modules
+dist/*
 /node_modules
 npm-debug.log*
 yarn-debug.log*

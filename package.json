@@ -5,20 +5,21 @@
   "description": "Utility bot for the Fur Feathers and Scales server",
   "author": "Alex",
   "license": "MIT",
-  "type": "module",
+  "type": "commonjs",
   "main": "dist/index.js",
   "scripts": {
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
     "build": "tsc -p tsconfig.json",
     "start": "npm run build && cross-env NODE_ENV=production node dist/index.js",
-    "dev": "cross-env NODE_ENV=development ts-node-dev --respawn --transpile-only -r dotenv/config src/index.ts"
+    "dev": "cross-env DOTENV_CONFIG_PATH=./.env.dev ts-node-dev --respawn --transpile-only -r dotenv/config src/index.ts"
   },
   "dependencies": {
     "@sapphire/framework": "^5.3.6",
     "@sapphire/plugin-subcommands": "^7.0.1",
     "@sapphire/utilities": "^3.18.2",
-    "discord.js": "^14.14.1",
+    "discord-api-types": "^0.38.11",
+    "discord.js": "^14.19.3",
     "dotenv": "^16.5.0",
     "mongoose": "^8.15.1"
   },
