@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "es2022",
+    "moduleResolution": "node16",
+    "lib": [
+      "es2022"
+    ],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmitOnError": true,
+    "useUnknownInCatchVariables": true,
+    "exactOptionalPropertyTypes": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "removeComments": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "baseUrl": ".",
+  "paths": {
+    "@/*": [
+      "src/*"
+    ]
+  }
+}

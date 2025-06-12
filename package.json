@@ -1,0 +1,39 @@
+{
+  "name": "lelasbot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Utility bot for the Fur Feathers and Scales server",
+  "author": "Alex",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "build": "tsc -p tsconfig.json",
+    "start": "npm run build && cross-env NODE_ENV=production node dist/index.js",
+    "dev": "cross-env NODE_ENV=development ts-node-dev --respawn --transpile-only -r dotenv/config src/index.ts"
+  },
+  "dependencies": {
+    "@sapphire/framework": "^5.3.6",
+    "@sapphire/plugin-subcommands": "^7.0.1",
+    "@sapphire/utilities": "^3.18.2",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.5.0",
+    "mongoose": "^8.15.1"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "rimraf": "^5.0.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CommandLineFox/LelasBot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CommandLineFox/LelasBot/issues"
+  },
+  "homepage": "https://github.com/CommandLineFox/LelasBot#readme"
+}
