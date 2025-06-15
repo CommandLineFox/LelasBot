@@ -1,11 +1,18 @@
-import {container} from "@sapphire/framework";
-import mongoose, {Document, Model, Schema} from "mongoose";
-import {DatabaseConfig} from "../types/config";
-import {Guild as GuildType, YouTubeChannelConfig, YouTubeNotificationsConfig} from "../types/guild";
+import mongoose, {Document, Model, Schema} from 'mongoose';
+import {DatabaseConfig} from '../types/config';
+import {YouTubeNotificationsConfig, YouTubeChannelConfig,} from '../types/guild';
 
 /**
- * Sub‐schema: a single YouTube channel’s settings.
+ * We only declare the shape *inside* the Document that Mongoose uses.
+ * We do NOT extend your Guild interface here to avoid the `id`‐property clash.
  */
+interface GuildDocument extends Document {
+    /** must match your `Guild.id` */
+    id: string;
+    /** optional notifications block */
+    youtubeNotifications?: YouTubeNotificationsConfig;
+}
+
 const youtubeChannelSchema = new Schema<YouTubeChannelConfig>(
     {
         channelId: { type: String, required: true },
@@ -24,130 +31,49 @@ const youtubeChannelSchema = new Schema<YouTubeChannelConfig>(
     { _id: false }
 );
 
-/**
- * Sub‐schema: guild‐wide notifications' config.
- */
-const youtubeNotificationsSchema = new Schema<YouTubeNotificationsConfig>(
-    {
-        pollIntervalMinutes: { type: Number, default: 5 },
-        channels: {
-            type: [youtubeChannelSchema],
-            required: true,
-            validate: {
-                validator: (arr: any[]) => arr.length > 0,
-                message: "A guild must configure at least one YouTube channel."
-            }
-        }
-    },
-    { _id: false }
-);
+const youtubeNotificationsSchema = new Schema<YouTubeNotificationsConfig>({ pollIntervalSeconds: { type: Number, default: 30 }, channels: { type: [youtubeChannelSchema], required: true }, }, { _id: false });
 
-/**
- * Top‐level guild schema.
- */
-const guildSchema = new Schema<GuildType>(
-    {
-        id: { type: String, required: true, unique: true },
-        youtubeNotifications: { type: youtubeNotificationsSchema, default: undefined }
-    },
-    { timestamps: true }
-);
+const guildSchema = new Schema<GuildDocument>({ id: { type: String, required: true, unique: true }, youtubeNotifications: { type: youtubeNotificationsSchema, required: false }, }, { timestamps: true });
 
-/**
- * Instead of
- *   `interface GuildDocument extends GuildType, Document { … }`
- * we use a **type alias** to combine them:
- */
-type GuildDocument = GuildType & Document;
+const GuildModel: Model<GuildDocument> = mongoose.models.Guild || mongoose.model<GuildDocument>('Guild', guildSchema);
 
-/** Create the Mongoose model */
-const GuildModel: Model<GuildDocument> = mongoose.model<GuildDocument>(
-    "Guild",
-    guildSchema
-);
-
-/**
- * Central MongoDB connector + accessors.
- */
 export default class Database {
-    private static instance: Database | null = null;
-    private readonly guilds = GuildModel;
+    private static instance: Database;
 
-    private constructor(private config: DatabaseConfig) {
-        mongoose.set("strictQuery", true);
+    private constructor(private cfg: DatabaseConfig) {
+        mongoose.set('strictQuery', false);
     }
 
-    /**
-     * Singleton accessor.
-     */
-    public static getInstance(config?: DatabaseConfig): Database {
-        if (!this.instance) {
-            if (!config) {
-                throw new Error("DatabaseConfig required to initialize Database");
+    /** Get or create the singleton */
+    public static getInstance(cfg?: DatabaseConfig): Database | null {
+        if (!Database.instance) {
+            if (!cfg) {
+                console.info("Couldn't find database config, using default values.");
+                return null;
             }
-            this.instance = new Database(config);
+
+            Database.instance = new Database(cfg);
         }
-        return this.instance;
+        return Database.instance;
     }
 
-    /**
-     * Connect to MongoDB.
-     */
+    /** Open connection */
     public async connect(): Promise<void> {
-        try {
-            await mongoose.connect(this.config.url, { dbName: this.config.name });
-            console.log("MongoDB connected");
-        } catch (err) {
-            console.log("MongoDB connection error:", err);
-            throw err;
-        }
+        await mongoose.connect(this.cfg.url, { dbName: this.cfg.name });
+        console.info('🗄️  Connected to MongoDB');
     }
 
-    /**
-     * Disconnect from MongoDB.
-     */
+    /** Close connection */
     public async disconnect(): Promise<void> {
         await mongoose.disconnect();
-        container.logger.info("MongoDB disconnected");
+        console.info('🗄️  Disconnected from MongoDB');
     }
 
     /**
-     * Get or create a guild document.
+     * Return the raw guild document as a plain JS object,
+     * matching your `Guild` interface shape exactly.
      */
-    private async getOrCreateGuild(id: string): Promise<GuildDocument> {
-        return this.guilds
-            .findOneAndUpdate(
-                { id },
-                { $setOnInsert: { id } },
-                { new: true, upsert: true }
-            )
-            .exec();
-    }
-
-    /**
-     * Read the YouTube config for a guild.
-     */
-    public async getYouTubeConfig(
-        guildId: string
-    ): Promise<YouTubeNotificationsConfig | undefined> {
-        const guild = await this.getOrCreateGuild(guildId);
-        return guild.youtubeNotifications;
-    }
-
-    /**
-     * Upsert the YouTube config for a guild.
-     */
-    public async setYouTubeConfig(
-        guildId: string,
-        cfg: YouTubeNotificationsConfig
-    ): Promise<YouTubeNotificationsConfig> {
-        const updated = await this.guilds
-            .findOneAndUpdate(
-                { id: guildId },
-                { youtubeNotifications: cfg },
-                { new: true, upsert: true }
-            )
-            .exec();
-        return updated.youtubeNotifications!;
+    public async getGuild(id: string) {
+        return GuildModel.findOne({ id }).lean();
     }
 }

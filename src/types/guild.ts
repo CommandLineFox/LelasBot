@@ -39,15 +39,15 @@ export interface YouTubeChannelConfig {
  * Here you can set global toggles (applies to every channel listed).
  */
 export interface YouTubeNotificationsConfig {
-    /** Poll interval in minutes (how often you check the YouTube API) */
-    pollIntervalMinutes?: number;
+    /** Poll interval in seconds (how often you check the YouTube API) */
+    pollIntervalSeconds?: number;
 
     /** All the channels this guild cares about */
     channels: YouTubeChannelConfig[];
 }
 
 /**
- * Your persistent representation in the database:
+ * Persistent representation in the database:
  * each guild gets one of these documents.
  */
 export interface Guild {

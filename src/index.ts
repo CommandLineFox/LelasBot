@@ -4,7 +4,11 @@ import {BotClient} from "./types/client";
 
 async function main(): Promise<void> {
     const config = Config.getInstance();
+
     const database = Database.getInstance(config.getDatabaseConfig());
+    if (!database) {
+        return;
+    }
 
     await database.connect();
 
