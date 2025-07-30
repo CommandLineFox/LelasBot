@@ -12,9 +12,9 @@ export class StatBotCommand extends Subcommand {
     public constructor(context: Command.LoaderContext, options: Command.Options) {
         super(context, {
             ...options,
-            name: "ping",
-            description: 'Check if the bot is responsive',
-            detailedDescription: "Check if the bot is responsive",
+            name: "statbot",
+            description: 'Query Statbot API data',
+            detailedDescription: "Query Statbot API data",
             requiredUserPermissions: [PermissionFlagsBits.ManageGuild]
         });
     }
