@@ -16,6 +16,7 @@ async function main(): Promise<void> {
 
     try {
         await client.login(config.getClientConfig().token);
+        await client.application!.commands.set([]);
     } catch (error) {
         console.error('Error logging in:', error);
     }

@@ -52,6 +52,19 @@ export class MessagesCommand extends Subcommand {
                         .setName("tops-members")
                         .setDescription("Top message members");
                 })
+                // Add the missing tops-channels subcommand here
+                .addSubcommand(cmd => {
+                    addSeriesOptions(cmd); // These options are typically for series, but present in the API for tops as well.
+                    addBotOption(cmd);
+                    addMemberFilterOptions(cmd); // Filters members who sent messages
+                    addChannelFilterOptions(cmd); // Filters the channels themselves
+                    addPaginationOptions(cmd);
+                    addSelectOption(cmd); // Allows selecting specific channel IDs
+                    addFullOption(cmd);
+                    return cmd
+                        .setName("tops-channels")
+                        .setDescription("Top message channels");
+                })
                 .addSubcommand(cmd => {
                     addSeriesOptions(cmd);
                     addBotOption(cmd);

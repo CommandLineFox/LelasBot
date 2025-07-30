@@ -50,6 +50,10 @@ export class VoiceCommand extends Subcommand {
                         .addBooleanOption(opt =>
                             opt.setName("by_state")
                                 .setDescription("Group by voice state type?")
+                        )
+                        .addBooleanOption(opt =>
+                            opt.setName("by_flag")
+                                .setDescription("Group by message flag?")
                         );
                 })
                 .addSubcommand(cmd => {
@@ -63,6 +67,30 @@ export class VoiceCommand extends Subcommand {
                     return cmd
                         .setName("tops-members")
                         .setDescription("Top voice members")
+                        .addStringOption(opt =>
+                            opt.setName("voice_states")
+                                .setDescription("Comma-separated voice states to include")
+                                .addChoices(
+                                    { name: "normal", value: "normal" },
+                                    { name: "afk", value: "afk" },
+                                    { name: "self_mute", value: "self_mute" },
+                                    { name: "self_deaf", value: "self_deaf" },
+                                    { name: "server_mute", value: "server_mute" },
+                                    { name: "server_deaf", value: "server_deaf" }
+                                )
+                        );
+                })
+                .addSubcommand(cmd => {
+                    addSeriesOptions(cmd);
+                    addBotOption(cmd);
+                    addMemberFilterOptions(cmd);
+                    addChannelFilterOptions(cmd);
+                    addPaginationOptions(cmd);
+                    addSelectOption(cmd);
+                    addFullOption(cmd);
+                    return cmd
+                        .setName("tops-channels")
+                        .setDescription("Top voice channels")
                         .addStringOption(opt =>
                             opt.setName("voice_states")
                                 .setDescription("Comma-separated voice states to include")
