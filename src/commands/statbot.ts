@@ -186,7 +186,6 @@ export class StatBotCommand extends Subcommand {
             content: `Here's your Statbot data for \`${group}/${sub}\``,
             files: [{ attachment: buffer, name: `${group}-${sub}.json` }]
         });
-
     }
 
     public override async messageRun(message: Message): Promise<void> {
@@ -259,14 +258,18 @@ export class StatBotCommand extends Subcommand {
         const params = new URLSearchParams();
         const opts = ["start", "end", "timezone_offset", "interval", "limit", "order", "bot", "stats"];
         for (const opt of opts) {
-            const value = getOption(opt);
+            const optionValue = getOption(opt);
+            const value = (optionValue as any)?.value ?? optionValue;
+
             if (value !== null && value !== undefined) {
-                params.append(opt, value.toString());
+                params.append(opt, value.toString().trim());
             }
         }
 
         const url = `https://api.statbot.net${endpoint}?${params.toString()}`;
         const token = Config.getInstance().getApiConfig().statbotApiKey;
+
+        container.logger.info(`Making Statbot API request: ${url}`);
 
         try {
             const res = await axios.get(url, {
