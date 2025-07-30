@@ -1,5 +1,5 @@
 import mongoose, {Document, Model, Schema} from 'mongoose';
-import {DatabaseConfig} from '../types/config';
+import {DatabaseConfig} from '../config/config';
 import {YouTubeNotificationsConfig, YouTubeChannelConfig,} from '../types/guild';
 
 /**

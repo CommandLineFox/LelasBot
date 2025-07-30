@@ -14,6 +14,7 @@ yarn-error.log*
 ### Other
 .vscode/*
 .idea/*
+*.tsbuildinfo
 
 ### Data
 *.env*

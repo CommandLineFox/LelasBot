@@ -1,4 +1,4 @@
-import {Config} from "./types/config";
+import {Config} from "./config/config";
 import Database from "./database/database";
 import {BotClient} from "./types/client";
 

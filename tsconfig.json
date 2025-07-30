@@ -18,8 +18,7 @@
     "noPropertyAccessFromIndexSignature": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "incremental": true,
-    "tsBuildInfoFile": "./.tsbuildinfo",
+    "incremental": false,
     "rootDir": "./src",
     "outDir": "./dist",
     "sourceMap": true,
@@ -28,11 +27,5 @@
   },
   "include": [
     "src/**/*"
-  ],
-  "baseUrl": ".",
-  "paths": {
-    "@/*": [
-      "src/*"
-    ]
-  }
+  ]
 }
