@@ -1,4 +1,4 @@
-import {Command, container} from '@sapphire/framework';
+import {Command} from '@sapphire/framework';
 import {Subcommand} from "@sapphire/plugin-subcommands";
 import axios from "axios";
 import {Message, PermissionFlagsBits} from 'discord.js';
@@ -268,8 +268,6 @@ export class StatBotCommand extends Subcommand {
 
         const url = `https://api.statbot.net${endpoint}?${params.toString()}`;
         const token = Config.getInstance().getApiConfig().statbotApiKey;
-
-        container.logger.info(`Making Statbot API request: ${url}`);
 
         try {
             const res = await axios.get(url, {
