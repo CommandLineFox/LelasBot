@@ -215,15 +215,26 @@ export async function handleStatbotRequest(context: { group: string; sub: string
         "whitelist_activities", "blacklist_activities", "by_activity",
         "page_size", "page", "select", "full"
     ];
+
+    const arrayOptionsWithSuffix = [
+        "stats",
+        "whitelist_members", "blacklist_members", "whitelist_roles", "blacklist_roles",
+        "whitelist_channels", "blacklist_channels", "whitelist_voice_channels", "blacklist_voice_channels",
+        "voice_states",
+        "select",
+        "whitelist_activities", "blacklist_activities"
+    ];
+
     for (const opt of opts) {
         const optionValue = getOption(opt);
         const value = (optionValue as any)?.value ?? optionValue;
 
         if (value !== null && value !== undefined) {
-            if (opt.endsWith("s") && (opt.startsWith("whitelist_") || opt.startsWith("blacklist_") || opt === "voice_states" || opt === "select")) {
+            if (arrayOptionsWithSuffix.includes(opt)) {
                 const values = String(value).split(',').map(s => s.trim()).filter(s => s.length > 0);
+                const paramName = `${opt}[]`;
                 for (const item of values) {
-                    params.append(opt, item);
+                    params.append(paramName, item);
                 }
             } else {
                 params.append(opt, value.toString().trim());
