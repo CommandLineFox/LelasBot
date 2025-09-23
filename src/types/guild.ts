@@ -44,6 +44,9 @@ export interface YouTubeNotificationsConfig {
 
     /** All the channels this guild cares about */
     channels: YouTubeChannelConfig[];
+
+    /** ID of the channel that's currently being managed */
+    currentChannelId: string;
 }
 
 /**

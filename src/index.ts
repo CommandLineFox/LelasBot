@@ -1,6 +1,6 @@
-import {Config} from "./config/config";
+import { Config } from "./config/config";
 import Database from "./database/database";
-import {BotClient} from "./types/client";
+import { BotClient } from "./types/client";
 
 async function main(): Promise<void> {
     const config = Config.getInstance();
@@ -16,7 +16,6 @@ async function main(): Promise<void> {
 
     try {
         await client.login(config.getClientConfig().token);
-        await client.application!.commands.set([]);
     } catch (error) {
         console.error('Error logging in:', error);
     }
