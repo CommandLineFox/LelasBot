@@ -1,5 +1,5 @@
 import { Command, CommandOptionsRunTypeEnum } from '@sapphire/framework';
-import { MessageFlags, TextChannel, Role } from 'discord.js';
+import {MessageFlags, TextChannel, Role, PermissionFlagsBits} from 'discord.js';
 import { GuildService } from '../../services/guildService';
 import { CustomResponse } from '../../types/customResponse';
 
@@ -13,7 +13,8 @@ export class ScheduledCommand extends Command {
             description: 'Manage scheduled alerts for the current YouTube channel',
             detailedDescription: 'Enable/disable scheduled stream alerts, set the Discord channel, or set the mention role.',
             runIn: CommandOptionsRunTypeEnum.GuildText,
-            preconditions: ['UptimeCheck']
+            preconditions: ['UptimeCheck'],
+            requiredUserPermissions: PermissionFlagsBits.ManageGuild
         });
     }
 

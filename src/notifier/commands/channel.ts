@@ -1,5 +1,5 @@
 import {Command, CommandOptionsRunTypeEnum} from '@sapphire/framework';
-import {MessageFlags, StringSelectMenuBuilder, ActionRowBuilder, StringSelectMenuInteraction} from 'discord.js';
+import {MessageFlags, StringSelectMenuBuilder, ActionRowBuilder, StringSelectMenuInteraction, PermissionFlagsBits} from 'discord.js';
 import {GuildService} from '../../services/guildService';
 import {CustomResponse} from '../../types/customResponse';
 
@@ -13,7 +13,8 @@ export class ChannelCommand extends Command {
             description: 'Manage tracked YouTube channels',
             detailedDescription: 'Add, remove, clear, or choose the current YouTube channel for this guild',
             runIn: CommandOptionsRunTypeEnum.GuildText,
-            preconditions: ['UptimeCheck']
+            preconditions: ['UptimeCheck'],
+            requiredUserPermissions: PermissionFlagsBits.ManageGuild
         });
     }
 

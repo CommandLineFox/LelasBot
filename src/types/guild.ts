@@ -39,8 +39,11 @@ export interface YouTubeChannelConfig {
     /** Optional: Last found livestream */
     lastLive?: string;
 
-    /** OPtional: Last scheduled stream */
+    /** Optional: Last scheduled stream */
     lastScheduledStream?: string;
+
+    /** Optional: Uploads playlist to fetch from */
+    uploadsPlaylistId?: string;
 }
 
 /**
@@ -48,9 +51,6 @@ export interface YouTubeChannelConfig {
  * Here you can set global toggles (applies to every channel listed).
  */
 export interface YouTubeNotificationsConfig {
-    /** Poll interval in seconds (how often you check the YouTube API) */
-    pollIntervalSeconds?: number;
-
     /** All the channels this guild cares about */
     channels: YouTubeChannelConfig[];
 

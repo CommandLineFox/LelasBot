@@ -6,7 +6,7 @@ import {Client} from "discord.js";
  * @returns The remaining time in milliseconds if the bot hasn't reached the uptime or null
  */
 export function getRemainingUptime(client: Client): number | null {
-    const minUptime = 5 * 60 * 1000;
+    const minUptime = 5 * 1 * 1000;
     const currentTime = Date.now();
     const botStartTime = client.readyTimestamp ?? currentTime;
 

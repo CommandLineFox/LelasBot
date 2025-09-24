@@ -19,16 +19,22 @@ export type DatabaseConfig = {
     url: string;
 };
 
+export type ApiConfig = {
+    youtubeApiKey: string;
+}
+
 export class Config {
     private static instance: Config;
-    private clientConfig: ClientConfig;
-    private clientOptions: ClientOptions;
-    private databaseConfig: DatabaseConfig;
+    private readonly clientConfig: ClientConfig;
+    private readonly clientOptions: ClientOptions;
+    private readonly databaseConfig: DatabaseConfig;
+    private readonly apiConfig: ApiConfig;
 
-    private constructor(clientConfig: ClientConfig, clientOptions: ClientOptions, databaseConfig: DatabaseConfig) {
+    private constructor(clientConfig: ClientConfig, clientOptions: ClientOptions, databaseConfig: DatabaseConfig, apiConfig: ApiConfig) {
         this.clientConfig = clientConfig;
         this.clientOptions = clientOptions;
         this.databaseConfig = databaseConfig;
+        this.apiConfig = apiConfig;
     }
 
     public static getInstance(): Config {
@@ -53,10 +59,15 @@ export class Config {
                 url: process.env.DB_URL!,
             };
 
+            const apiConfig: ApiConfig = {
+                youtubeApiKey: process.env.YOUTUBE_API_KEY!
+            }
+
             this.instance = new Config(
                 clientConfig,
                 clientOptions,
-                databaseConfig
+                databaseConfig,
+                apiConfig
             );
         }
 
@@ -73,5 +84,9 @@ export class Config {
 
     public getDatabaseConfig(): DatabaseConfig {
         return this.databaseConfig;
+    }
+
+    public getApiConfig(): ApiConfig {
+        return this.apiConfig;
     }
 }

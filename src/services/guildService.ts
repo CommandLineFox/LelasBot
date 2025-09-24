@@ -5,9 +5,8 @@ import {Guild, YouTubeNotificationsConfig, YouTubeChannelConfig,} from '../types
 import {
     setValue,
     unsetValue,
-    addToArray,
     removeFromArray,
-    removeAllFromArray,
+    removeAllFromArray, addToArray,
 } from '../utils/databaseUtils';
 
 export class GuildService {
@@ -62,46 +61,6 @@ export class GuildService {
     }
 
     /**
-     * Set the polling interval (in seconds) for checking YouTube
-     * @param guildId Discord guild ID
-     * @param seconds Poll interval in seconds
-     */
-    public async setPollInterval(guildId: string, seconds: number): Promise<CustomResponse> {
-        return setValue(
-            guildId,
-            'youtubeNotifications.pollIntervalSeconds',
-            seconds,
-            'Poll interval is already that value.',
-            `Poll interval set to ${seconds} second(s).`,
-            'Failed to update poll interval.'
-        );
-    }
-
-    /**
-     * Remove the polling interval setting for a guild
-     * @param guildId Discord guild ID
-     */
-    public async unsetPollInterval(guildId: string): Promise<CustomResponse> {
-        return unsetValue(
-            guildId,
-            'youtubeNotifications.pollIntervalSeconds',
-            'Poll interval is not set.',
-            'Poll interval cleared.',
-            'Failed to clear poll interval.'
-        );
-    }
-
-    /**
-     * Retrieve the polling interval (in seconds) for a guild
-     * Returns `null` if not set or guild not found
-     * @param guildId Discord guild ID
-     */
-    public async getPollInterval(guildId: string): Promise<number | null> {
-        const cfg = await this.getGuildConfig(guildId);
-        return cfg?.youtubeNotifications?.pollIntervalSeconds ?? null;
-    }
-
-    /**
      * Add a YouTube channel configuration to a guild
      * @param guildId Discord guild ID
      * @param channelOrId Config or channel ID
@@ -132,7 +91,6 @@ export class GuildService {
 
         if (res.success) {
             await this.setCurrentChannel(guildId, channel.channelId);
-            await this.updatePollIntervalFromChannels(guildId);
         }
 
         return res;
@@ -155,8 +113,6 @@ export class GuildService {
         );
 
         if (res.success) {
-            await this.updatePollIntervalFromChannels(guildId);
-
             const current = await this.getCurrentChannel(guildId);
             if (current === channelId) {
                 await this.setCurrentToLastOrClear(guildId);
@@ -179,7 +135,6 @@ export class GuildService {
         );
 
         if (res.success) {
-            await this.unsetPollInterval(guildId);
             await this.clearCurrentChannel(guildId);
         }
 
@@ -643,6 +598,35 @@ export class GuildService {
     }
 
     /**
+     * Set the uploads playlist
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     * @param playlistId YouTube uploads playlist ID
+     */
+    public async setUploadsPlaylist(guildId: string, channelId: string, playlistId: string): Promise<CustomResponse> {
+        const idx = await this.findChannelIndex(guildId, channelId);
+        if (idx < 0) return { success: false, message: 'Channel not found.' };
+        return setValue(
+            guildId,
+            `youtubeNotifications.channels.${idx}.uploadsPlaylistId`,
+            playlistId,
+            'Uploads playlist already set to that ID.',
+            'Uploads playlist updated.',
+            'Failed to set the uploads playlist.'
+        )
+    }
+
+    /**
+     * Get the uploads playlist
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     */
+    public async getUploadsPlaylist(guildId: string, channelId: string): Promise<string | null> {
+        const cfg = await this.getChannelConfig(guildId, channelId);
+        return cfg?.uploadsPlaylistId ?? null;
+    }
+
+    /**
      * Clear the current active channel for settings
      * @param guildId ID of the guild
      */
@@ -654,21 +638,6 @@ export class GuildService {
             'Current channel cleared.',
             'Failed to clear current channel.'
         );
-    }
-
-    /**
-     * Updates the polling interval for all channels when a channel is added to avoid ratelimits
-     * @param guildId Discord guild ID
-     * @private
-     */
-    private async updatePollIntervalFromChannels(guildId: string): Promise<void> {
-        const channels = await this.getChannels(guildId);
-        const total = channels?.length ?? 0;
-        if (total > 0) {
-            await this.setPollInterval(guildId, 30 * total);
-        } else {
-            await this.unsetPollInterval(guildId);
-        }
     }
 
     /**
