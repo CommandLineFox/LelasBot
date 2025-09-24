@@ -31,15 +31,23 @@ export class ReadyListener extends Listener {
                         const channelId = channel.channelId;
 
                         try {
-                            const videoId = await getLatestVideo(client, guild.id, channelId);
-                            await this.postUpload(videoId, channelId, client, guild);
+                            const uploadEnabled = await client.getGuildService().getUploadEnabled(guild.id, channelId);
+                            if (uploadEnabled) {
+                                const videoId = await getLatestVideo(client, guild.id, channelId);
+                                await this.postUpload(videoId, channelId, client, guild);
+                            }
 
-                            const liveId = await getLatestStream(client, guild.id, channelId);
-                            await this.postLiveStream(liveId, channelId, client, guild);
+                            const liveEnabled = await client.getGuildService().getLiveEnabled(guild.id, channelId);
+                            if (liveEnabled) {
+                                const liveId = await getLatestStream(client, guild.id, channelId);
+                                await this.postLiveStream(liveId, channelId, client, guild);
+                            }
 
-                            const scheduledId = await getLatestScheduledStream(client, guild.id, channelId);
-                            await this.postScheduledStream(scheduledId, channelId, client, guild);
-
+                            const scheduledEnabled = await client.getGuildService().getScheduleEnabled(guild.id, channelId);
+                            if (scheduledEnabled) {
+                                const scheduledId = await getLatestScheduledStream(client, guild.id, channelId);
+                                await this.postScheduledStream(scheduledId, channelId, client, guild);
+                            }
                         } catch (err) {
                             this.container.logger.error(
                                 `Error checking YouTube for guild ${guild.id}, channel ${channelId}`,
