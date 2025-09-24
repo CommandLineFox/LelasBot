@@ -23,7 +23,5 @@ declare namespace NodeJS {
         readonly DB_NAME: string;
         /** Mongo DB connection URL */
         readonly DB_URL: string;
-
-        readonly STATBOTAPI: string;
     }
 }

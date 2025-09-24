@@ -24,14 +24,23 @@ export interface YouTubeChannelConfig {
     /** Optional: only send schedule alerts if true */
     scheduleEnabled?: boolean;
 
-    /** Optional: mention these role IDs on upload alerts */
-    uploadMentionRoleIds?: string[];
+    /** Optional: mention theis role ID on upload alerts */
+    uploadMentionRoleId?: string;
 
-    /** Optional: mention these role IDs on live alerts */
-    liveMentionRoleIds?: string[];
+    /** Optional: mention this role ID on live alerts */
+    liveMentionRoleId?: string;
 
-    /** Optional: mention these role IDs on scheduled-stream alerts */
-    scheduleMentionRoleIds?: string[];
+    /** Optional: mention this role ID on scheduled-stream alerts */
+    scheduleMentionRoleId?: string;
+
+    /** Optional: Last uploaded video */
+    lastUpload?: string;
+
+    /** Optional: Last found livestream */
+    lastLive?: string;
+
+    /** OPtional: Last scheduled stream */
+    lastScheduledStream?: string;
 }
 
 /**

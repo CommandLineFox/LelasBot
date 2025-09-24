@@ -2,12 +2,18 @@ import {Document} from 'mongoose';
 import Database from '../database/database';
 import {CustomResponse} from '../types/customResponse';
 import {Guild, YouTubeNotificationsConfig, YouTubeChannelConfig,} from '../types/guild';
-import {setValue, unsetValue, addToArray, removeFromArray, removeAllFromArray,} from '../utils/databaseUtils';
+import {
+    setValue,
+    unsetValue,
+    addToArray,
+    removeFromArray,
+    removeAllFromArray,
+} from '../utils/databaseUtils';
 
 export class GuildService {
     /**
-     * Fetch the full guild configuration object.
-     * Returns `null` if the guild does not exist.
+     * Fetch the full guild configuration object
+     * Returns `null` if the guild does not exist
      * @param guildId Discord guild (server) ID
      */
     public async getGuildConfig(guildId: string): Promise<Guild | null> {
@@ -26,7 +32,7 @@ export class GuildService {
     }
 
     /**
-     * Create or replace the YouTube notifications block for a guild.
+     * Create or replace the YouTube notifications block for a guild
      * @param guildId Discord guild ID
      * @param cfg New notifications configuration
      */
@@ -42,7 +48,7 @@ export class GuildService {
     }
 
     /**
-     * Remove the YouTube notifications block for a guild.
+     * Remove the YouTube notifications block for a guild
      * @param guildId Discord guild ID
      */
     public async unsetNotifications(guildId: string): Promise<CustomResponse> {
@@ -56,7 +62,7 @@ export class GuildService {
     }
 
     /**
-     * Set the polling interval (in seconds) for checking YouTube.
+     * Set the polling interval (in seconds) for checking YouTube
      * @param guildId Discord guild ID
      * @param seconds Poll interval in seconds
      */
@@ -72,7 +78,7 @@ export class GuildService {
     }
 
     /**
-     * Remove the polling interval setting for a guild.
+     * Remove the polling interval setting for a guild
      * @param guildId Discord guild ID
      */
     public async unsetPollInterval(guildId: string): Promise<CustomResponse> {
@@ -86,8 +92,8 @@ export class GuildService {
     }
 
     /**
-     * Retrieve the polling interval (in seconds) for a guild.
-     * Returns `null` if not set or guild not found.
+     * Retrieve the polling interval (in seconds) for a guild
+     * Returns `null` if not set or guild not found
      * @param guildId Discord guild ID
      */
     public async getPollInterval(guildId: string): Promise<number | null> {
@@ -96,12 +102,26 @@ export class GuildService {
     }
 
     /**
-     * Add a YouTube channel configuration to a guild.
+     * Add a YouTube channel configuration to a guild
      * @param guildId Discord guild ID
-     * @param channel Full YouTubeChannelConfig to add
+     * @param channelOrId Config or channel ID
      */
-    public async addChannel(guildId: string, channel: YouTubeChannelConfig): Promise<CustomResponse> {
-        return addToArray(
+    public async addChannel(guildId: string, channelOrId: YouTubeChannelConfig | string): Promise<CustomResponse> {
+        const channel: YouTubeChannelConfig = typeof channelOrId === 'string'
+            ? {
+                channelId: channelOrId,
+                uploadDiscordChannelId: '',
+                liveDiscordChannelId: '',
+                scheduleDiscordChannelId: '',
+                uploadEnabled: true,
+                liveEnabled: true,
+                scheduleEnabled: true,
+                uploadMentionRoleId: '',
+                liveMentionRoleId: '',
+                scheduleMentionRoleId: ''
+            } : channelOrId;
+
+        const res = await addToArray(
             guildId,
             'youtubeNotifications.channels',
             channel,
@@ -109,15 +129,22 @@ export class GuildService {
             'Channel added successfully.',
             'Failed to add channel.'
         );
+
+        if (res.success) {
+            await this.setCurrentChannel(guildId, channel.channelId);
+            await this.updatePollIntervalFromChannels(guildId);
+        }
+
+        return res;
     }
 
     /**
      * Remove a tracked YouTube channel from a guild.
      * @param guildId Discord guild ID
-     * @param channelId YouTube channel ID to remove
+     * @param channelId Channel ID
      */
     public async removeChannel(guildId: string, channelId: string): Promise<CustomResponse> {
-        return removeFromArray(
+        const res = await removeFromArray(
             guildId,
             'youtubeNotifications.channels',
             { channelId },
@@ -126,24 +153,42 @@ export class GuildService {
             'Channel removed successfully.',
             'Failed to remove channel.'
         );
+
+        if (res.success) {
+            await this.updatePollIntervalFromChannels(guildId);
+
+            const current = await this.getCurrentChannel(guildId);
+            if (current === channelId) {
+                await this.setCurrentToLastOrClear(guildId);
+            }
+        }
+
+        return res;
     }
 
     /**
-     * Remove all tracked YouTube channels from a guild.
+     * Remove all tracked YouTube channels from a guild
      * @param guildId Discord guild ID
      */
     public async clearChannels(guildId: string): Promise<CustomResponse> {
-        return removeAllFromArray(
+        const res = await removeAllFromArray(
             guildId,
             'youtubeNotifications.channels',
             'All channels cleared.',
             'Failed to clear channels.'
         );
+
+        if (res.success) {
+            await this.unsetPollInterval(guildId);
+            await this.clearCurrentChannel(guildId);
+        }
+
+        return res;
     }
 
     /**
-     * Retrieve all tracked channels for a guild.
-     * Returns `null` if a guild or notifications block is not found.
+     * Retrieve all tracked channels for a guild
+     * Returns `null` if a guild or notifications block is not found
      * @param guildId Discord guild ID
      */
     public async getChannels(guildId: string): Promise<YouTubeChannelConfig[] | null> {
@@ -152,8 +197,8 @@ export class GuildService {
     }
 
     /**
-     * Retrieve configuration for a specific tracked channel.
-     * Returns `null` if not found.
+     * Retrieve configuration for a specific tracked channel
+     * Returns `null` if not found
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
      */
@@ -163,7 +208,7 @@ export class GuildService {
     }
 
     /**
-     * Find the index of a channel in the guild’s channels array.
+     * Find the index of a channel in the guild’s channel array
      * Returns -1 if not found.
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
@@ -174,7 +219,7 @@ export class GuildService {
     }
 
     /**
-     * Enable or disable upload alerts for a specific channel.
+     * Enable or disable upload alerts for a specific channel
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
      * @param enabled `true` to enable, `false` to disable
@@ -193,7 +238,7 @@ export class GuildService {
     }
 
     /**
-     * Retrieve the upload-enabled flag for a channel.
+     * Get whether the upload alert is enabled or disabled
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
      */
@@ -222,7 +267,7 @@ export class GuildService {
     }
 
     /**
-     * Retrieve the live-enabled flag for a channel.
+     * Get whether the live alert is enabled or disabled
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
      */
@@ -232,9 +277,9 @@ export class GuildService {
     }
 
     /**
-     * Enable or disable schedule alerts for a specific channel.
+     * Enable or disable scheduled stream alerts for a specific channel.
      * @param guildId Discord guild ID
-     * @param channelId YouTube channel ID
+     * @param channelId Channel ID
      * @param enabled `true` to enable, `false` to disable
      */
     public async setScheduleEnabled(guildId: string, channelId: string, enabled: boolean): Promise<CustomResponse> {
@@ -251,7 +296,7 @@ export class GuildService {
     }
 
     /**
-     * Retrieve the schedule-enabled flag for a channel.
+     * Get whether the scheduled stream alert is enabled or disabled
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
      */
@@ -261,18 +306,18 @@ export class GuildService {
     }
 
     /**
-     * Set the Discord channel ID for upload alerts on a specific channel.
-     * @param guildId Discord guild ID
-     * @param channelId YouTube channel ID
-     * @param discordChan Discord channel ID
+     * Set the channel that uploads are pointed to
+     * @param guildId Discord channel ID
+     * @param channelId Youtube channel ID
+     * @param discordChannelId Discord channel ID to send in
      */
-    public async setUploadDiscordChannelId(guildId: string, channelId: string, discordChan: string): Promise<CustomResponse> {
+    public async setUploadDiscordChannelId(guildId: string, channelId: string, discordChannelId: string): Promise<CustomResponse> {
         const idx = await this.findChannelIndex(guildId, channelId);
         if (idx < 0) return { success: false, message: 'Channel not found.' };
         return setValue(
             guildId,
             `youtubeNotifications.channels.${idx}.uploadDiscordChannelId`,
-            discordChan,
+            discordChannelId,
             'Upload Discord channel is already set to that ID.',
             'Upload Discord channel updated.',
             'Failed to update uploadDiscordChannelId.'
@@ -280,7 +325,7 @@ export class GuildService {
     }
 
     /**
-     * Retrieve the Discord channel ID for upload alerts on a channel.
+     * Get the channel that uploads are sent to
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
      */
@@ -290,18 +335,18 @@ export class GuildService {
     }
 
     /**
-     * Set the Discord channel ID for live alerts on a specific channel.
-     * @param guildId Discord guild ID
-     * @param channelId YouTube channel ID
-     * @param discordChan Discord channel ID
+     * Set the channel that streams are pointed to
+     * @param guildId Discord channel ID
+     * @param channelId Youtube channel ID
+     * @param discordChannelId Discord channel ID to send in
      */
-    public async setLiveDiscordChannelId(guildId: string, channelId: string, discordChan: string): Promise<CustomResponse> {
+    public async setLiveDiscordChannelId(guildId: string, channelId: string, discordChannelId: string): Promise<CustomResponse> {
         const idx = await this.findChannelIndex(guildId, channelId);
         if (idx < 0) return { success: false, message: 'Channel not found.' };
         return setValue(
             guildId,
             `youtubeNotifications.channels.${idx}.liveDiscordChannelId`,
-            discordChan,
+            discordChannelId,
             'Live Discord channel is already set to that ID.',
             'Live Discord channel updated.',
             'Failed to update liveDiscordChannelId.'
@@ -309,7 +354,7 @@ export class GuildService {
     }
 
     /**
-     * Retrieve the Discord channel ID for live alerts on a channel.
+     * Get the channel that streams are sent to
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
      */
@@ -319,18 +364,18 @@ export class GuildService {
     }
 
     /**
-     * Set the Discord channel ID for scheduled-stream alerts on a specific channel.
-     * @param guildId Discord guild ID
-     * @param channelId YouTube channel ID
-     * @param discordChan Discord channel ID
+     * Set the channel that scheduled streams are pointed to
+     * @param guildId Discord channel ID
+     * @param channelId Youtube channel ID
+     * @param discordChannelId Discord channel ID to send in
      */
-    public async setScheduleDiscordChannelId(guildId: string, channelId: string, discordChan: string): Promise<CustomResponse> {
+    public async setScheduleDiscordChannelId(guildId: string, channelId: string, discordChannelId: string): Promise<CustomResponse> {
         const idx = await this.findChannelIndex(guildId, channelId);
         if (idx < 0) return { success: false, message: 'Channel not found.' };
         return setValue(
             guildId,
             `youtubeNotifications.channels.${idx}.scheduleDiscordChannelId`,
-            discordChan,
+            discordChannelId,
             'Schedule Discord channel is already set to that ID.',
             'Schedule Discord channel updated.',
             'Failed to update scheduleDiscordChannelId.'
@@ -338,7 +383,7 @@ export class GuildService {
     }
 
     /**
-     * Retrieve the Discord channel ID for scheduled-stream alerts on a channel.
+     * Get the channel that scheduled streams are sent to
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
      */
@@ -348,90 +393,296 @@ export class GuildService {
     }
 
     /**
-     * Set the mention-role IDs for upload alerts on a specific channel.
+     * Set the role that's going to be mentioned when an upload is sent
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
-     * @param roles Array of Discord role IDs
+     * @param roleId Role ID
      */
-    public async setUploadMentionRoleIds(guildId: string, channelId: string, roles: string[]): Promise<CustomResponse> {
+    public async setUploadMentionRoleId(guildId: string, channelId: string, roleId: string): Promise<CustomResponse> {
         const idx = await this.findChannelIndex(guildId, channelId);
         if (idx < 0) return { success: false, message: 'Channel not found.' };
         return setValue(
             guildId,
-            `youtubeNotifications.channels.${idx}.uploadMentionRoleIds`,
-            roles,
-            'Upload mention roles already set.',
-            'Upload mention roles updated.',
-            'Failed to update uploadMentionRoleIds.'
+            `youtubeNotifications.channels.${idx}.uploadMentionRoleId`,
+            roleId,
+            'Upload mention role already set to that ID.',
+            'Upload mention role updated.',
+            'Failed to update uploadMentionRoleId.'
         );
     }
 
     /**
-     * Retrieve the mention-role IDs for upload alerts on a channel.
+     * Get the ID of the role that's mentioned when an upload is sent
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
      */
-    public async getUploadMentionRoleIds(guildId: string, channelId: string): Promise<string[] | null> {
+    public async getUploadMentionRoleId(guildId: string, channelId: string): Promise<string | null> {
         const cfg = await this.getChannelConfig(guildId, channelId);
-        return cfg?.uploadMentionRoleIds ?? null;
+        return cfg?.uploadMentionRoleId ?? null;
     }
 
     /**
-     * Set the mention-role IDs for live alerts on a specific channel.
+     * Set the role that's going to be mentioned when a stream is sent
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
-     * @param roles Array of Discord role IDs
+     * @param roleId Role ID
      */
-    public async setLiveMentionRoleIds(
-        guildId: string, channelId: string, roles: string[]): Promise<CustomResponse> {
+    public async setLiveMentionRoleId(guildId: string, channelId: string, roleId: string): Promise<CustomResponse> {
         const idx = await this.findChannelIndex(guildId, channelId);
         if (idx < 0) return { success: false, message: 'Channel not found.' };
         return setValue(
             guildId,
-            `youtubeNotifications.channels.${idx}.liveMentionRoleIds`,
-            roles,
-            'Live mention roles already set.',
-            'Live mention roles updated.',
-            'Failed to update liveMentionRoleIds.'
+            `youtubeNotifications.channels.${idx}.liveMentionRoleId`,
+            roleId,
+            'Live mention role already set to that ID.',
+            'Live mention role updated.',
+            'Failed to update liveMentionRoleId.'
         );
     }
 
     /**
-     * Retrieve the mention-role IDs for live alerts on a channel.
+     * Get the ID of the role that's mentioned when a stream is sent
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
      */
-    public async getLiveMentionRoleIds(guildId: string, channelId: string): Promise<string[] | null> {
+    public async getLiveMentionRoleId(guildId: string, channelId: string): Promise<string | null> {
         const cfg = await this.getChannelConfig(guildId, channelId);
-        return cfg?.liveMentionRoleIds ?? null;
+        return cfg?.liveMentionRoleId ?? null;
     }
 
     /**
-     * Set the mention-role IDs for scheduled-stream alerts on a specific channel.
+     * Set the role that's going to be mentioned when a scheduled stream is sent
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
-     * @param roles Array of Discord role IDs
+     * @param roleId Role ID
      */
-    public async setScheduleMentionRoleIds(guildId: string, channelId: string, roles: string[]): Promise<CustomResponse> {
+    public async setScheduleMentionRoleId(guildId: string, channelId: string, roleId: string): Promise<CustomResponse> {
         const idx = await this.findChannelIndex(guildId, channelId);
         if (idx < 0) return { success: false, message: 'Channel not found.' };
         return setValue(
             guildId,
-            `youtubeNotifications.channels.${idx}.scheduleMentionRoleIds`,
-            roles,
-            'Schedule mention roles already set.',
-            'Schedule mention roles updated.',
-            'Failed to update scheduleMentionRoleIds.'
+            `youtubeNotifications.channels.${idx}.scheduleMentionRoleId`,
+            roleId,
+            'Schedule mention role already set to that ID.',
+            'Schedule mention role updated.',
+            'Failed to update scheduleMentionRoleId.'
         );
     }
 
     /**
-     * Retrieve the mention-role IDs for scheduled-stream alerts on a channel.
+     * Get the ID of the role that's mentioned when a scheduled stream is sent
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
      */
-    public async getScheduleMentionRoleIds(guildId: string, channelId: string): Promise<string[] | null> {
+    public async getScheduleMentionRoleId(guildId: string, channelId: string): Promise<string | null> {
         const cfg = await this.getChannelConfig(guildId, channelId);
-        return cfg?.scheduleMentionRoleIds ?? null;
+        return cfg?.scheduleMentionRoleId ?? null;
+    }
+
+    /**
+     * Set the last uploaded video ID for a specific YouTube channel
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     * @param videoId ID of the last uploaded video
+     */
+    public async setLastUpload(guildId: string, channelId: string, videoId: string): Promise<CustomResponse> {
+        const idx = await this.findChannelIndex(guildId, channelId);
+        if (idx < 0) return { success: false, message: 'Channel not found.' };
+        return setValue(
+            guildId,
+            `youtubeNotifications.channels.${idx}.lastUpload`,
+            videoId,
+            'Last upload already set to that video.',
+            'Last upload updated.',
+            'Failed to update lastUpload.'
+        );
+    }
+
+    /**
+     * Get the last uploaded video ID for a specific YouTube channel
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     */
+    public async getLastUpload(guildId: string, channelId: string): Promise<string | null> {
+        const cfg = await this.getChannelConfig(guildId, channelId);
+        return cfg?.lastUpload ?? null;
+    }
+
+    /**
+     * Clear the last uploaded video ID for a specific YouTube channel
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     */
+    public async clearLastUpload(guildId: string, channelId: string): Promise<CustomResponse> {
+        const idx = await this.findChannelIndex(guildId, channelId);
+        if (idx < 0) return { success: false, message: 'Channel not found.' };
+        return unsetValue(
+            guildId,
+            `youtubeNotifications.channels.${idx}.lastUpload`,
+            'No last upload to clear.',
+            'Last upload cleared.',
+            'Failed to clear lastUpload.'
+        );
+    }
+
+    /**
+     * Set the last live stream ID for a specific YouTube channel
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     * @param liveId ID of the last live stream
+     */
+    public async setLastLive(guildId: string, channelId: string, liveId: string): Promise<CustomResponse> {
+        const idx = await this.findChannelIndex(guildId, channelId);
+        if (idx < 0) return { success: false, message: 'Channel not found.' };
+        return setValue(
+            guildId,
+            `youtubeNotifications.channels.${idx}.lastLive`,
+            liveId,
+            'Last live stream already set to that ID.',
+            'Last live stream updated.',
+            'Failed to update lastLive.'
+        );
+    }
+
+    /**
+     * Get the last live stream ID for a specific YouTube channel
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     */
+    public async getLastLive(guildId: string, channelId: string): Promise<string | null> {
+        const cfg = await this.getChannelConfig(guildId, channelId);
+        return cfg?.lastLive ?? null;
+    }
+
+    /**
+     * Clear the last live stream ID for a specific YouTube channel
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     */
+    public async clearLastLive(guildId: string, channelId: string): Promise<CustomResponse> {
+        const idx = await this.findChannelIndex(guildId, channelId);
+        if (idx < 0) return { success: false, message: 'Channel not found.' };
+        return unsetValue(
+            guildId,
+            `youtubeNotifications.channels.${idx}.lastLive`,
+            'No last live stream to clear.',
+            'Last live stream cleared.',
+            'Failed to clear lastLive.'
+        );
+    }
+
+    /**
+     * Set the last scheduled stream ID for a specific YouTube channel
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     * @param scheduledId ID of the last scheduled stream
+     */
+    public async setLastScheduledStream(guildId: string, channelId: string, scheduledId: string): Promise<CustomResponse> {
+        const idx = await this.findChannelIndex(guildId, channelId);
+        if (idx < 0) return { success: false, message: 'Channel not found.' };
+        return setValue(
+            guildId,
+            `youtubeNotifications.channels.${idx}.lastScheduledStream`,
+            scheduledId,
+            'Last scheduled stream already set to that ID.',
+            'Last scheduled stream updated.',
+            'Failed to update lastScheduledStream.'
+        );
+    }
+
+    /**
+     * Get the last scheduled stream ID for a specific YouTube channel
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     */
+    public async getLastScheduledStream(guildId: string, channelId: string): Promise<string | null> {
+        const cfg = await this.getChannelConfig(guildId, channelId);
+        return cfg?.lastScheduledStream ?? null;
+    }
+
+    /**
+     * Clear the last scheduled stream ID for a specific YouTube channel
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     */
+    public async clearLastScheduledStream(guildId: string, channelId: string): Promise<CustomResponse> {
+        const idx = await this.findChannelIndex(guildId, channelId);
+        if (idx < 0) return { success: false, message: 'Channel not found.' };
+        return unsetValue(
+            guildId,
+            `youtubeNotifications.channels.${idx}.lastScheduledStream`,
+            'No last scheduled stream to clear.',
+            'Last scheduled stream cleared.',
+            'Failed to clear lastScheduledStream.'
+        );
+    }
+
+    /**
+     * Set the YouTube channel ID of the channel that's currently being managed
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     */
+    public async setCurrentChannel(guildId: string, channelId: string): Promise<CustomResponse> {
+        return setValue(
+            guildId,
+            'youtubeNotifications.currentChannelId',
+            channelId,
+            'That channel is already set as current.',
+            `Current channel set to ${channelId}`,
+            'Failed to set current channel.'
+        );
+    }
+
+    /**
+     * Get the YouTube channel ID of the channel that's currently being managed
+     * @param guildId Discord guild ID
+     */
+    public async getCurrentChannel(guildId: string): Promise<string | null> {
+        const cfg = await this.getGuildConfig(guildId);
+        return cfg?.youtubeNotifications?.currentChannelId ?? null;
+    }
+
+    /**
+     * Clear the current active channel for settings
+     * @param guildId ID of the guild
+     */
+    public async clearCurrentChannel(guildId: string): Promise<CustomResponse> {
+        return unsetValue(
+            guildId,
+            'youtubeNotifications.currentChannelId',
+            'No current channel set.',
+            'Current channel cleared.',
+            'Failed to clear current channel.'
+        );
+    }
+
+    /**
+     * Updates the polling interval for all channels when a channel is added to avoid ratelimits
+     * @param guildId Discord guild ID
+     * @private
+     */
+    private async updatePollIntervalFromChannels(guildId: string): Promise<void> {
+        const channels = await this.getChannels(guildId);
+        const total = channels?.length ?? 0;
+        if (total > 0) {
+            await this.setPollInterval(guildId, 30 * total);
+        } else {
+            await this.unsetPollInterval(guildId);
+        }
+    }
+
+    /**
+     * Set the current channel that's being managed
+     * @param guildId Discord guild ID
+     * @private
+     */
+    private async setCurrentToLastOrClear(guildId: string): Promise<void> {
+        const channels = await this.getChannels(guildId);
+        if (channels && channels.length > 0) {
+            const last = channels[channels.length - 1];
+            await this.setCurrentChannel(guildId, last.channelId);
+        } else {
+            await this.clearCurrentChannel(guildId);
+        }
     }
 }
