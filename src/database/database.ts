@@ -75,7 +75,7 @@ export default class Database {
      */
     public async connect(): Promise<void> {
         await mongoose.connect(this.cfg.url, { dbName: this.cfg.name });
-        console.info('🗄️  Connected to MongoDB');
+        console.info('Connected to MongoDB');
     }
 
     /**
@@ -83,7 +83,7 @@ export default class Database {
      */
     public async disconnect(): Promise<void> {
         await mongoose.disconnect();
-        console.info('🗄️  Disconnected from MongoDB');
+        console.info('Disconnected from MongoDB');
     }
 
     /**
