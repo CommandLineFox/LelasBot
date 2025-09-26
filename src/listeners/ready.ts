@@ -1,5 +1,4 @@
 import {Listener} from '@sapphire/framework';
-import {TextChannel} from "discord.js";
 import Database from "../database/database";
 import {BotClient} from "../types/client";
 import {Guild} from "../types/guild";
@@ -78,27 +77,32 @@ export class ReadyListener extends Listener {
      */
     private async postUpload(videoId: string | null, channelId: string, client: BotClient, guild: Guild): Promise<void> {
         if (!videoId) {
+            this.container.logger.error(`No video ID for guild ${guild.id} for channel ${channelId}`);
             return;
         }
 
         const uploadsChannelId = await client.getGuildService().getUploadDiscordChannelId(guild.id, channelId);
         if (!uploadsChannelId) {
+            this.container.logger.error(`"No discord channel ID for guild ${guild.id} for channel ${channelId}`);
             return;
         }
 
         const uploadRoleId = await client.getGuildService().getUploadMentionRoleId(guild.id, channelId);
         if (!uploadRoleId) {
+            this.container.logger.error(`No upload role ID for guild ${guild.id} for channel ${channelId}`);
             return;
         }
 
         const uploadChannel = await client.channels.fetch(uploadsChannelId);
-        if (!uploadChannel || !(uploadChannel instanceof TextChannel)) {
+        if (!uploadChannel || !uploadChannel.isSendable()) {
+            this.container.logger.error(`No upload channel for guild ${guild.id} for channel ${channelId}`);
             return;
         }
 
         const discordGuild = await client.guilds.fetch(guild.id);
         const uploadRole = await discordGuild.roles.fetch(uploadRoleId);
         if (!uploadRole) {
+            this.container.logger.error(`No upload role for guild ${guild.id} for channel ${channelId}`);
             return;
         }
 
@@ -115,27 +119,32 @@ export class ReadyListener extends Listener {
      */
     private async postLiveStream(videoId: string | null, channelId: string, client: BotClient, guild: Guild): Promise<void> {
         if (!videoId) {
+            this.container.logger.error(`No stream ID for guild ${guild.id} for channel ${channelId}`);
             return;
         }
 
         const liveChannelId = await client.getGuildService().getLiveDiscordChannelId(guild.id, channelId);
         if (!liveChannelId) {
+            this.container.logger.error(`No live channel ID for guild ${guild.id} for channel ${channelId}`);
             return;
         }
 
         const liveRoleId = await client.getGuildService().getLiveMentionRoleId(guild.id, channelId);
         if (!liveRoleId) {
+            this.container.logger.error(`No live role ID for guild ${guild.id} for channel ${channelId}`);
             return;
         }
 
         const liveChannel = await client.channels.fetch(liveChannelId);
-        if (!liveChannel || !(liveChannel instanceof TextChannel)) {
+        if (!liveChannel || !liveChannel.isSendable()) {
+            this.container.logger.error(`No live channel for guild ${guild.id} for channel ${channelId}`);
             return;
         }
 
         const discordGuild = await client.guilds.fetch(guild.id);
         const liveRole = await discordGuild.roles.fetch(liveRoleId);
         if (!liveRole) {
+            this.container.logger.error(`No live role for guild ${guild.id} for channel ${channelId}`);
             return;
         }
 
@@ -152,27 +161,32 @@ export class ReadyListener extends Listener {
      */
     private async postScheduledStream(videoId: string | null, channelId: string, client: BotClient, guild: Guild): Promise<void> {
         if (!videoId) {
+            this.container.logger.error(`No scheduled stream ID for guild ${guild.id} for channel ${channelId}`);
             return;
         }
 
         const scheduledChannelId = await client.getGuildService().getScheduleDiscordChannelId(guild.id, channelId);
         if (!scheduledChannelId) {
+            this.container.logger.error(`No scheduled channel ID for guild${guild.id} for channel ${channelId}`);
             return;
         }
 
         const scheduledRoleId = await client.getGuildService().getScheduleMentionRoleId(guild.id, channelId);
         if (!scheduledRoleId) {
+            this.container.logger.error(`No scheduled role ID for guild${guild.id} for channel ${channelId}`);
             return;
         }
 
         const scheduledChannel = await client.channels.fetch(scheduledChannelId);
-        if (!scheduledChannel || !(scheduledChannel instanceof TextChannel)) {
+        if (!scheduledChannel || !scheduledChannel.isSendable()) {
+            this.container.logger.error(`No scheduled channel for guild${guild.id} for channel ${channelId}`);
             return;
         }
 
         const discordGuild = await client.guilds.fetch(guild.id);
         const scheduledRole = await discordGuild.roles.fetch(scheduledRoleId);
         if (!scheduledRole) {
+            this.container.logger.error(`No scheduled role for guild${guild.id} for channel ${channelId}`);
             return;
         }
 
