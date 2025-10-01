@@ -6,6 +6,7 @@ services:
       - .env.production
     networks:
       - shared-mongo-net
+    restart: unless-stopped
 
 networks:
   shared-mongo-net:
