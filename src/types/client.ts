@@ -13,6 +13,7 @@ export class BotClient extends SapphireClient {
         super(options);
 
         this.stores.registerPath(join(this.rootData.root, 'notifier'));
+        this.stores.registerPath(join(this.rootData.root, 'statbot'));
     }
 
     public getCurrentChecks(): Map<string, Map<string, boolean>> {

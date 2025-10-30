@@ -21,6 +21,7 @@ export type DatabaseConfig = {
 
 export type ApiConfig = {
     youtubeApiKey: string;
+    statbotApiKey: string;
 }
 
 export class Config {
@@ -60,7 +61,8 @@ export class Config {
             };
 
             const apiConfig: ApiConfig = {
-                youtubeApiKey: process.env.YOUTUBE_API_KEY!
+                youtubeApiKey: process.env.YOUTUBE_API_KEY!,
+                statbotApiKey: process.env.STATBOT_API_KEY!
             }
 
             this.instance = new Config(

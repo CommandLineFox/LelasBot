@@ -26,5 +26,7 @@ declare namespace NodeJS {
 
         /** YouTube API key */
         readonly YOUTUBE_API_KEY: string;
+        /** Statbot API key */
+        readonly STATBOT_API_KEY: string;
     }
 }
