@@ -261,6 +261,35 @@ export class GuildService {
     }
 
     /**
+     * Enable or disable short alerts for a specific channel
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     * @param enabled `true` to enable, `false` to disable
+     */
+    public async setShortEnabled(guildId: string, channelId: string, enabled: boolean): Promise<CustomResponse> {
+        const idx = await this.findChannelIndex(guildId, channelId);
+        if (idx < 0) return { success: false, message: 'Channel not found.' };
+        return setValue(
+            guildId,
+            `youtubeNotifications.channels.${idx}.shortEnabled`,
+            enabled,
+            `Short alerts already ${enabled ? 'enabled' : 'disabled'}.`,
+            `Short alerts ${enabled ? 'enabled' : 'disabled'}.`,
+            'Failed to update shortEnabled.'
+        );
+    }
+
+    /**
+     * Get whether the short alert is enabled or disabled
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     */
+    public async getShortEnabled(guildId: string, channelId: string): Promise<boolean | null> {
+        const cfg = await this.getChannelConfig(guildId, channelId);
+        return cfg?.shortEnabled ?? null;
+    }
+
+    /**
      * Set the channel that uploads are pointed to
      * @param guildId Discord channel ID
      * @param channelId Youtube channel ID
@@ -348,6 +377,35 @@ export class GuildService {
     }
 
     /**
+     * Set the channel that shorts are pointed to
+     * @param guildId Discord channel ID
+     * @param channelId Youtube channel ID
+     * @param discordChannelId Discord channel ID to send in
+     */
+    public async setShortDiscordChannelId(guildId: string, channelId: string, discordChannelId: string): Promise<CustomResponse> {
+        const idx = await this.findChannelIndex(guildId, channelId);
+        if (idx < 0) return { success: false, message: 'Channel not found.' };
+        return setValue(
+            guildId,
+            `youtubeNotifications.channels.${idx}.shortDiscordChannelId`,
+            discordChannelId,
+            'Short Discord channel is already set to that ID.',
+            'Short Discord channel updated.',
+            'Failed to update shortDiscordChannelId.'
+        );
+    }
+
+    /**
+     * Get the channel that shorts are sent to
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     */
+    public async getShortDiscordChannelId(guildId: string, channelId: string): Promise<string | null> {
+        const cfg = await this.getChannelConfig(guildId, channelId);
+        return cfg?.shortDiscordChannelId ?? null;
+    }
+
+    /**
      * Set the role that's going to be mentioned when an upload is sent
      * @param guildId Discord guild ID
      * @param channelId YouTube channel ID
@@ -432,6 +490,35 @@ export class GuildService {
     public async getScheduleMentionRoleId(guildId: string, channelId: string): Promise<string | null> {
         const cfg = await this.getChannelConfig(guildId, channelId);
         return cfg?.scheduleMentionRoleId ?? null;
+    }
+
+    /**
+     * Set the role that's going to be mentioned when a short is sent
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     * @param roleId Role ID
+     */
+    public async setShortMentionRoleId(guildId: string, channelId: string, roleId: string): Promise<CustomResponse> {
+        const idx = await this.findChannelIndex(guildId, channelId);
+        if (idx < 0) return { success: false, message: 'Channel not found.' };
+        return setValue(
+            guildId,
+            `youtubeNotifications.channels.${idx}.shortMentionRoleId`,
+            roleId,
+            'Short mention role already set to that ID.',
+            'Short mention role updated.',
+            'Failed to update shortMentionRoleId.'
+        );
+    }
+
+    /**
+     * Get the ID of the role that's mentioned when a short is sent
+     * @param guildId Discord guild ID
+     * @param channelId YouTube channel ID
+     */
+    public async getShortMentionRoleId(guildId: string, channelId: string): Promise<string | null> {
+        const cfg = await this.getChannelConfig(guildId, channelId);
+        return cfg?.shortMentionRoleId ?? null;
     }
 
     /**

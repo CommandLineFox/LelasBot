@@ -15,6 +15,9 @@ export interface YouTubeChannelConfig {
     /** Discord channel ID to send “stream scheduled” messages */
     scheduleDiscordChannelId: string;
 
+    /** Discord channel ID to send "short uploaded" messages */
+    shortDiscordChannelId?: string;
+
     /** Optional: only send upload alerts if true */
     uploadEnabled?: boolean;
 
@@ -24,6 +27,9 @@ export interface YouTubeChannelConfig {
     /** Optional: only send schedule alerts if true */
     scheduleEnabled?: boolean;
 
+    /** Optional: only send shorts separately if true */
+    shortEnabled?: boolean;
+
     /** Optional: mention theis role ID on upload alerts */
     uploadMentionRoleId?: string;
 
@@ -32,6 +38,9 @@ export interface YouTubeChannelConfig {
 
     /** Optional: mention this role ID on scheduled-stream alerts */
     scheduleMentionRoleId?: string;
+
+    /** Optional: mention this role ID on short alerts */
+    shortMentionRoleId?: string;
 
     /** Optional: Last uploaded video */
     lastUpload?: string;

@@ -139,7 +139,11 @@ export async function removeFromArray(guildId: string, databaseLocation: string,
         }
     } else {
         if (typeof valueOrIndex === 'object') {
-            index = array.findIndex((element: any) => JSON.stringify(element) === JSON.stringify(valueOrIndex));
+            index = array.findIndex((element: any) =>
+                Object.entries(valueOrIndex).every(
+                    ([key, val]) => element?.[key] === val
+                )
+            );
         } else {
             index = array.indexOf(valueOrIndex);
         }

@@ -13,14 +13,17 @@ const youtubeChannelSchema = new Schema<YouTubeChannelConfig>(
         uploadDiscordChannelId: { type: String },
         liveDiscordChannelId: { type: String },
         scheduleDiscordChannelId: { type: String },
+        shortDiscordChannelId: { type: String },
 
         uploadEnabled: { type: Boolean, default: true },
         liveEnabled: { type: Boolean, default: true },
         scheduleEnabled: { type: Boolean, default: true },
+        shortEnabled: { type: Boolean, default: true },
 
         uploadMentionRoleId: { type: String, default: null },
         liveMentionRoleId: { type: String, default: null },
         scheduleMentionRoleId: { type: String, default: null },
+        shortMentionRoleId: { type: String, default: null },
 
         lastUpload: { type: String },
         lastLive: { type: String },

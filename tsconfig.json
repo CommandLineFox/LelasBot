@@ -21,7 +21,7 @@
     "incremental": false,
     "rootDir": "./src",
     "outDir": "./dist",
-    "sourceMap": true,
+    "sourceMap": false,
     "resolveJsonModule": true,
     "removeComments": true
   },

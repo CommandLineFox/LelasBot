@@ -28,26 +28,62 @@ export async function runApiRequest(url: string, guildId: string): Promise<Respo
  */
 export async function runFullCheck(interaction: CommandInteraction): Promise<void> {
     const urls = [
+        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/series",
         "https://api.statbot.net/v1/guilds/1123334635145936986/messages/series?by_member=true&by_channel=true&by_flag=true",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/series?interval=hour&order=asc",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/series?whitelist_members[]=399624330268508162&whitelist_roles[]=1123592030120063027&whitelist_channels[]=1123604393497985054",
+
         "https://api.statbot.net/v1/guilds/1123334635145936986/voice/series",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/activities/series?by_member=true",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/series?by_member=true&by_channel=true&by_state=true",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/series?voice_states[]=self_mute",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/series?whitelist_voice_channels[]=1123604393497985054",
+
+        "https://api.statbot.net/v1/guilds/1123334635145936986/activities/series",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/activities/series?by_member=true&by_activity=true",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/activities/series?whitelist_activities[]=1",
+
         "https://api.statbot.net/v1/guilds/1123334635145936986/membercounts/series",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/statuses/series?limit=2",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/membercounts/series?interval=week&order=desc",
+
+        "https://api.statbot.net/v1/guilds/1123334635145936986/statuses/series",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/statuses/series?interval=month&order=asc",
+
         "https://api.statbot.net/v1/guilds/1123334635145936986/counts/members/series?stats[]=text&stats[]=voice",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/counts/channels/series?stats[]=text",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/sums",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/sums",
-        "https://api.statbot.net/v1/activities",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/channels/1123604352641273977",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/channels",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/counts/members",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/counts/members/series?stats[]=voice&whitelist_members[]=399624330268508162",
+
         "https://api.statbot.net/v1/guilds/1123334635145936986/counts/channels/series?stats[]=text&stats[]=voice",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/counts/members/series?stats[]=text",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/tops/members?full=true&blacklist_roles[]=1123334635145936986",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/tops/channels?full=true",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/tops/members",
-        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/tops/channels?full=true",
+
+        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/sums",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/sums?whitelist_channels[]=1123604393497985054",
+
+        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/sums",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/sums?voice_states[]=afk",
+
+        "https://api.statbot.net/v1/guilds/1123334635145936986/counts/members",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/counts/members?whitelist_roles[]=1123592030120063027",
+
+        "https://api.statbot.net/v1/guilds/1123334635145936986/channels/1123604393497985054",
+
+        "https://api.statbot.net/v1/guilds/1123334635145936986/channels",
+
+        "https://api.statbot.net/v1/activities",
+
         "https://api.statbot.net/v1/guilds/1123334635145936986/activities/tops/activities",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/activities/tops/activities?page=1&page_size=50",
+
+        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/tops/members",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/tops/members?full=true",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/tops/members?whitelist_members[]=399624330268508162",
+
+        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/tops/channels",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/messages/tops/channels?full=true",
+
+        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/tops/members",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/tops/members?full=true",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/tops/members?voice_states[]=server_mute",
+
+        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/tops/channels",
+        "https://api.statbot.net/v1/guilds/1123334635145936986/voice/tops/channels?full=true"
     ];
 
     let successfulUrlCount = 0;

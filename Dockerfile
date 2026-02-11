@@ -1,26 +1,18 @@
-# ─── BUILD STAGE ─────────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 WORKDIR /usr/src/app
 
-# 1) Install all deps and build
-COPY package*.json tsconfig.json ./
-RUN npm ci
+COPY package*.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
 
-COPY src ./src
+COPY . .
 RUN npm run build
 
-
-
-# ─── PRODUCTION STAGE ────────────────────────────────────────────────────────
 FROM node:20-alpine AS production
 WORKDIR /usr/src/app
 
-# 2) Install only production deps
-COPY package*.json ./
-RUN npm ci --omit=dev
-
-# 3) Copy in the compiled output
+COPY --from=builder /usr/src/app/package*.json ./
 COPY --from=builder /usr/src/app/dist ./dist
 
-# 4) Start the server (env vars come from docker-compose)
+RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
+
 CMD ["node", "dist/index.js"]
