@@ -1,6 +1,7 @@
 import {Command, CommandOptionsRunTypeEnum} from '@sapphire/framework';
 import {MessageFlags, StringSelectMenuBuilder, ActionRowBuilder, StringSelectMenuInteraction, PermissionFlagsBits} from 'discord.js';
 import {GuildService} from '../../services/guildService';
+import {YouTubeService} from "../../services/youtubeService";
 import {CustomResponse} from '../../types/customResponse';
 
 export class ChannelCommand extends Command {
@@ -49,11 +50,19 @@ export class ChannelCommand extends Command {
             case 'add': {
                 const ytId = interaction.options.getString('id', true);
                 result = await this.guildService.addChannel(interaction.guildId!, ytId);
+
+                if (result.success) {
+                    await YouTubeService.subscribe(ytId);
+                }
                 break;
             }
             case 'remove': {
                 const ytId = interaction.options.getString('id', true);
                 result = await this.guildService.removeChannel(interaction.guildId!, ytId);
+
+                if (result.success) {
+                    await YouTubeService.unsubscribe(ytId);
+                }
                 break;
             }
             case 'clear': {

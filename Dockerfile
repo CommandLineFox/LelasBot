@@ -15,4 +15,6 @@ COPY --from=builder /usr/src/app/dist ./dist
 
 RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
 
+EXPOSE 3005
+
 CMD ["node", "dist/index.js"]
