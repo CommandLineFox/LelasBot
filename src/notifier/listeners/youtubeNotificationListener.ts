@@ -7,14 +7,22 @@ export class YouTubeNotificationListener extends Listener {
     public constructor(context: Listener.LoaderContext, options: Listener.Options) {
         super(context, {
             ...options,
-            event: 'youtubeNotification'
+            event: 'youtubeNotification',
         });
     }
 
+    private processingLocks = new Set<string>();
+
     public async run(payload: { videoId: string, channelId: string }) {
         const { videoId, channelId } = payload;
-        const client = this.container.client as BotClient;
+        const lockKey = `${videoId}-${channelId}`;
 
+        if (this.processingLocks.has(lockKey)) return;
+        this.processingLocks.add(lockKey);
+
+        setTimeout(() => this.processingLocks.delete(lockKey), 5000);
+
+        const client = this.container.client as BotClient;
         this.container.logger.info(`[YouTube Webhook] Processing Video: ${videoId} | Channel: ${channelId}`);
 
         try {
@@ -29,41 +37,33 @@ export class YouTubeNotificationListener extends Listener {
 
             for (const guild of relevantGuilds) {
                 const guildId = guild.id;
-
-                const lastUpload = await client.getGuildService().getLastUpload(guildId, channelId);
-                const lastLive = await client.getGuildService().getLastLive(guildId, channelId);
-                const lastScheduled = await client.getGuildService().getLastScheduledStream(guildId, channelId);
+                const gs = client.getGuildService();
 
                 if (status === "live") {
+                    const lastLive = await gs.getLastLive(guildId, channelId);
                     if (videoId === lastLive) continue;
 
-                    const enabled = await client.getGuildService().getLiveEnabled(guildId, channelId);
-                    if (enabled) {
+                    if (await gs.getLiveEnabled(guildId, channelId)) {
                         await this.postNotification(client, guildId, channelId, videoId, "live");
-                        await client.getGuildService().setLastLive(guildId, channelId, videoId);
-                        await client.getGuildService().setLastUpload(guildId, channelId, videoId);
-
-                        if (videoId === lastScheduled) {
-                            await client.getGuildService().clearLastScheduledStream(guildId, channelId);
-                        }
+                        await gs.setLastLive(guildId, channelId, videoId);
                     }
                 } else if (status === "upcoming") {
-                    if (videoId === lastScheduled || videoId === lastLive) continue;
+                    const lastScheduled = await gs.getLastScheduledStream(guildId, channelId);
+                    if (videoId === lastScheduled) continue;
 
-                    const enabled = await client.getGuildService().getScheduleEnabled(guildId, channelId);
-                    if (enabled) {
+                    if (await gs.getScheduleEnabled(guildId, channelId)) {
                         await this.postNotification(client, guildId, channelId, videoId, "scheduled");
-                        await client.getGuildService().setLastScheduledStream(guildId, channelId, videoId);
+                        await gs.setLastScheduledStream(guildId, channelId, videoId);
                     }
                 } else {
-                    if (videoId === lastUpload || videoId === lastLive || videoId === lastScheduled) {
+                    const lastUpload = await gs.getLastUpload(guildId, channelId);
+                    if (videoId === lastUpload) {
                         continue;
                     }
 
-                    const enabled = await client.getGuildService().getUploadEnabled(guildId, channelId);
-                    if (enabled) {
+                    if (await gs.getUploadEnabled(guildId, channelId)) {
                         await this.postNotification(client, guildId, channelId, videoId, "upload");
-                        await client.getGuildService().setLastUpload(guildId, channelId, videoId);
+                        await gs.setLastUpload(guildId, channelId, videoId);
                     }
                 }
             }
@@ -73,35 +73,32 @@ export class YouTubeNotificationListener extends Listener {
     }
 
     private async postNotification(client: BotClient, guildId: string, channelId: string, videoId: string, type: "upload" | "live" | "scheduled") {
-        const guildService = client.getGuildService();
-        let discordChannelId: string | null = null;
-        let roleId: string | null = null;
-        let message = "";
+        const gs = client.getGuildService();
+        let discordChannelId: string | null;
+        let roleId: string | null;
+        let message: string;
 
-        switch (type) {
-            case "upload":
-                discordChannelId = await guildService.getUploadDiscordChannelId(guildId, channelId);
-                roleId = await guildService.getUploadMentionRoleId(guildId, channelId);
-                message = "new video uploaded!";
-                break;
-            case "live":
-                discordChannelId = await guildService.getLiveDiscordChannelId(guildId, channelId);
-                roleId = await guildService.getLiveMentionRoleId(guildId, channelId);
-                message = "stream started!";
-                break;
-            case "scheduled":
-                discordChannelId = await guildService.getScheduleDiscordChannelId(guildId, channelId);
-                roleId = await guildService.getScheduleMentionRoleId(guildId, channelId);
-                message = "stream scheduled!";
-                break;
+        if (type === "live") {
+            discordChannelId = await gs.getLiveDiscordChannelId(guildId, channelId);
+            roleId = await gs.getLiveMentionRoleId(guildId, channelId);
+            message = "stream started!";
+        } else if (type === "scheduled") {
+            discordChannelId = await gs.getScheduleDiscordChannelId(guildId, channelId);
+            roleId = await gs.getScheduleMentionRoleId(guildId, channelId);
+            message = "stream scheduled!";
+        } else {
+            discordChannelId = await gs.getUploadDiscordChannelId(guildId, channelId);
+            roleId = await gs.getUploadMentionRoleId(guildId, channelId);
+            message = "new video uploaded!";
         }
 
-        if (!discordChannelId || !roleId) return;
+        if (!discordChannelId) return;
 
         try {
             const channel = await client.channels.fetch(discordChannelId);
             if (channel && channel.isSendable()) {
-                await channel.send(`<@&${roleId}> ${message} \nhttps://www.youtube.com/watch?v=${videoId}`);
+                const mention = roleId ? `<@&${roleId}> ` : "";
+                await channel.send(`${mention}${message} \nhttps://www.youtube.com/watch?v=${videoId}`);
             }
         } catch (err) {
             this.container.logger.error(`[Discord Post Error] Guild: ${guildId}`, err);

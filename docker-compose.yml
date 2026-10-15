@@ -5,7 +5,7 @@ services:
     env_file:
       - .env.production
     ports:
-      - "3005:3005"
+      - "0.0.0.0:3005:3005"
     networks:
       - shared-mongo-net
     restart: unless-stopped

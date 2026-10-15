@@ -1,5 +1,5 @@
-import {container} from '@sapphire/framework';
-import {Config} from "../config/config";
+import { container } from '@sapphire/framework';
+import { Config } from "../config/config";
 import Database from "../database/database";
 
 export class YouTubeService {
@@ -12,7 +12,7 @@ export class YouTubeService {
             'hub.topic': `https://www.youtube.com/xml/feeds/videos.xml?channel_id=${channelId}`,
             'hub.verify': 'async',
             'hub.mode': 'subscribe',
-            'hub.lease_seconds': '864000'
+            'hub.lease_seconds': '432000'
         });
 
         try {
@@ -24,9 +24,11 @@ export class YouTubeService {
 
             if (res.ok) {
                 container.logger.info(`[YouTube] Subscribed to channel: ${channelId}`);
+            } else {
+                container.logger.error(`[YouTube] Subscription failed for ${channelId}: ${res.statusText}`);
             }
         } catch (err) {
-            container.logger.error(`[YouTube] Subscription failed for ${channelId}`, err);
+            container.logger.error(`[YouTube] Subscription error for ${channelId}`, err);
         }
     }
 
@@ -56,7 +58,10 @@ export class YouTubeService {
     }
 
     public static async subscribeToAll() {
-        const guilds = await Database.getInstance()!.getAllGuilds();
+        const db = Database.getInstance();
+        if (!db) return;
+
+        const guilds = await db.getAllGuilds();
         const uniqueChannels = new Set<string>();
 
         for (const guild of guilds) {
@@ -70,8 +75,8 @@ export class YouTubeService {
 
     public static startAutoRefresh() {
         setInterval(() => {
-            container.logger.info('[YouTube] Running weekly subscription refresh...');
+            container.logger.info('[YouTube] Running scheduled subscription refresh...');
             this.subscribeToAll();
-        }, 1000 * 60 * 60 * 24 * 7);
+        }, 1000 * 60 * 60 * 24 * 3);
     }
 }
