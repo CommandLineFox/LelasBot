@@ -113,4 +113,12 @@ export default class Database {
     public async getAllGuilds() {
         return GuildModel.find().lean();
     }
+
+    /**
+     * Get all guilds that have a specific YouTube channel
+     * @param channelId YouTube channel ID
+     */
+    public async getGuildsByYouTubeChannel(channelId: string) {
+        return GuildModel.find({ 'youtubeNotifications.channels.channelId': channelId }).lean();
+    }
 }

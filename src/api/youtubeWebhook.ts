@@ -1,6 +1,6 @@
 import express from 'express';
-import { XMLParser } from 'fast-xml-parser';
-import { container } from '@sapphire/framework';
+import {XMLParser} from 'fast-xml-parser';
+import {container} from '@sapphire/framework';
 
 let isServerStarted = false;
 
@@ -19,7 +19,9 @@ export const startYoutubeWebhook = () => {
         console.log('Headers:', JSON.stringify(req.headers, null, 2));
 
         let data = '';
-        req.on('data', chunk => { data += chunk; });
+        req.on('data', chunk => {
+            data += chunk;
+        });
         req.on('end', () => {
             if (data) console.log('Body:', data);
         });
@@ -51,8 +53,21 @@ export const startYoutubeWebhook = () => {
                 for (const item of entries) {
                     const videoId = item['yt:videoId'];
                     const channelId = item['yt:channelId'];
+                    const publishedStr = item.published;
+                    const updatedStr = item.updated;
 
                     if (videoId && channelId) {
+                        if (publishedStr && updatedStr) {
+                            const publishedTime = new Date(publishedStr).getTime();
+                            const updatedTime = new Date(updatedStr).getTime();
+                            const EDIT_THRESHOLD_MS = 60000; // 60 seconds
+
+                            if ((updatedTime - publishedTime) > EDIT_THRESHOLD_MS) {
+                                container.logger.info(`[Webhook] Ignored title/description edit for video: ${videoId}`);
+                                continue;
+                            }
+                        }
+
                         container.client.emit('youtubeNotification', { videoId, channelId });
                     }
                 }

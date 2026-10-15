@@ -26,47 +26,52 @@ export class YouTubeNotificationListener extends Listener {
         this.container.logger.info(`[YouTube Webhook] Processing Video: ${videoId} | Channel: ${channelId}`);
 
         try {
-            const guilds = await Database.getInstance()!.getAllGuilds();
-            const relevantGuilds = guilds.filter(g =>
-                g.youtubeNotifications?.channels?.some(c => c.channelId === channelId)
-            );
+            const relevantGuilds = await Database.getInstance()!.getGuildsByYouTubeChannel(channelId);
 
-            if (relevantGuilds.length === 0) return;
+            if (relevantGuilds.length === 0) {
+                return;
+            }
 
             const status = await getVideoLiveStatus(videoId);
 
-            for (const guild of relevantGuilds) {
-                const guildId = guild.id;
-                const gs = client.getGuildService();
+            await Promise.all(
+                relevantGuilds.map(async (guild) => {
+                    const guildId = guild.id;
+                    const gs = client.getGuildService();
 
-                if (status === "live") {
-                    const lastLive = await gs.getLastLive(guildId, channelId);
-                    if (videoId === lastLive) continue;
+                    if (status === "live") {
+                        const lastLive = await gs.getLastLive(guildId, channelId);
+                        if (videoId === lastLive) {
+                            return;
+                        }
 
-                    if (await gs.getLiveEnabled(guildId, channelId)) {
-                        await this.postNotification(client, guildId, channelId, videoId, "live");
-                        await gs.setLastLive(guildId, channelId, videoId);
-                    }
-                } else if (status === "upcoming") {
-                    const lastScheduled = await gs.getLastScheduledStream(guildId, channelId);
-                    if (videoId === lastScheduled) continue;
+                        if (await gs.getLiveEnabled(guildId, channelId)) {
+                            await this.postNotification(client, guildId, channelId, videoId, "live");
+                            await gs.setLastLive(guildId, channelId, videoId);
+                        }
+                    } else if (status === "upcoming") {
+                        const lastScheduled = await gs.getLastScheduledStream(guildId, channelId);
+                        if (videoId === lastScheduled) {
+                            return;
+                        }
 
-                    if (await gs.getScheduleEnabled(guildId, channelId)) {
-                        await this.postNotification(client, guildId, channelId, videoId, "scheduled");
-                        await gs.setLastScheduledStream(guildId, channelId, videoId);
-                    }
-                } else {
-                    const lastUpload = await gs.getLastUpload(guildId, channelId);
-                    if (videoId === lastUpload) {
-                        continue;
-                    }
+                        if (await gs.getScheduleEnabled(guildId, channelId)) {
+                            await this.postNotification(client, guildId, channelId, videoId, "scheduled");
+                            await gs.setLastScheduledStream(guildId, channelId, videoId);
+                        }
+                    } else {
+                        const lastUpload = await gs.getLastUpload(guildId, channelId);
+                        if (videoId === lastUpload) {
+                            return;
+                        }
 
-                    if (await gs.getUploadEnabled(guildId, channelId)) {
-                        await this.postNotification(client, guildId, channelId, videoId, "upload");
-                        await gs.setLastUpload(guildId, channelId, videoId);
+                        if (await gs.getUploadEnabled(guildId, channelId)) {
+                            await this.postNotification(client, guildId, channelId, videoId, "upload");
+                            await gs.setLastUpload(guildId, channelId, videoId);
+                        }
                     }
-                }
-            }
+                })
+            );
         } catch (error) {
             this.container.logger.error(`[YouTube Listener Error]`, error);
         }
