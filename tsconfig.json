@@ -1,11 +1,9 @@
 {
   "compilerOptions": {
-    "target": "es2022",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "lib": [
-      "es2022"
-    ],
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ESNext"],
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -18,14 +16,12 @@
     "noPropertyAccessFromIndexSignature": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "incremental": false,
+    "incremental": true,
     "rootDir": "./src",
     "outDir": "./dist",
-    "sourceMap": false,
+    "sourceMap": true,
     "resolveJsonModule": true,
     "removeComments": true
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }
