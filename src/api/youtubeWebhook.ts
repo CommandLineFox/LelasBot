@@ -3,6 +3,7 @@ import {XMLParser} from 'fast-xml-parser';
 import {container} from '@sapphire/framework';
 
 let isServerStarted = false;
+const recentNotifications = new Set<string>();
 
 export const startYoutubeWebhook = () => {
     if (isServerStarted) return;
@@ -14,22 +15,16 @@ export const startYoutubeWebhook = () => {
         removeNSPrefix: false
     });
 
+    app.use(express.text({ type: ['application/atom+xml', 'application/xml', 'text/xml'] }));
+
     app.use((req, _res, next) => {
-        console.log(`[INCOMING WEBHOOK] ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+        console.log(`[INCOMING WEBHOOK] ${new Date().toISOString()} ${req.method} ${req.originalUrl}`);
         console.log('Headers:', JSON.stringify(req.headers, null, 2));
-
-        let data = '';
-        req.on('data', chunk => {
-            data += chunk;
-        });
-        req.on('end', () => {
-            if (data) console.log('Body:', data);
-        });
-
+        if (req.body) {
+            console.log('Body:', req.body);
+        }
         next();
     });
-
-    app.use(express.text({ type: ['application/atom+xml', 'application/xml', 'text/xml'] }));
 
     app.get('/youtube/callback', (req, res) => {
         const challenge = req.query['hub.challenge'];
@@ -54,19 +49,26 @@ export const startYoutubeWebhook = () => {
                     const videoId = item['yt:videoId'];
                     const channelId = item['yt:channelId'];
                     const publishedStr = item.published;
-                    const updatedStr = item.updated;
 
                     if (videoId && channelId) {
-                        if (publishedStr && updatedStr) {
-                            const publishedTime = new Date(publishedStr).getTime();
-                            const updatedTime = new Date(updatedStr).getTime();
-                            const EDIT_THRESHOLD_MS = 60000; // 60 seconds
+                        if (recentNotifications.has(videoId)) {
+                            container.logger.info(`[Webhook] Skipped duplicate webhook notification for video: ${videoId}`);
+                            continue;
+                        }
 
-                            if ((updatedTime - publishedTime) > EDIT_THRESHOLD_MS) {
-                                container.logger.info(`[Webhook] Ignored title/description edit for video: ${videoId}`);
+                        if (publishedStr) {
+                            const publishedTime = new Date(publishedStr).getTime();
+                            const now = Date.now();
+                            const MAX_AGE_MS = 15 * 60 * 1000;
+
+                            if ((now - publishedTime) > MAX_AGE_MS) {
+                                container.logger.info(`[Webhook] Ignored late webhook/edit for old video: ${videoId}`);
                                 continue;
                             }
                         }
+
+                        recentNotifications.add(videoId);
+                        setTimeout(() => recentNotifications.delete(videoId), 10 * 60 * 1000);
 
                         container.client.emit('youtubeNotification', { videoId, channelId });
                     }
