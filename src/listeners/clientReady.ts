@@ -1,15 +1,15 @@
-import {Listener} from '@sapphire/framework';
+import {Events, Listener} from '@sapphire/framework';
 import {startYoutubeWebhook} from "../api/youtubeWebhook";
 import {YouTubeService} from "../services/youtubeService";
 import {BotClient} from "../types/client";
 
 export class ClientReadyListener extends Listener {
     public constructor(context: Listener.LoaderContext, options: Listener.Options) {
-        super(context, { ...options, once: true, event: "clientReady" });
+        super(context, { ...options, once: true, event: Events.ClientReady });
     }
 
     /**
-     * Run method for the client.on("ready") event
+     * Run method for the client.on("clientReady") event
      * @param client The client that just logged in
      */
     public async run(client: BotClient): Promise<void> {
